@@ -2,9 +2,10 @@
 *.tfstate
 *.tfstate.*
 .terraform/
-.terraform.lock.hcl
 *.tfvars
 !example.tfvars
+
+# .terraform.lock.hcl #バージョン管理に含めるべきファイルのため、Git管理の対象へ
 
 # IDE
 .idea/
@@ -12,3 +13,4 @@
 
 # OS
 .DS_Store
+
