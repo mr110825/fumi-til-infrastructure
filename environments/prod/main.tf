@@ -83,3 +83,103 @@ resource "aws_s3_bucket_lifecycle_configuration" "logs" {
     }
   }
 }
+
+# CloudFront OAC（Origin Access Control）
+resource "aws_cloudfront_origin_access_control" "main" {
+  name                              = "fumi-til-oac"
+  description                       = "OAC for fumi-til S3 bucket"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
+}
+
+# CloudFront Distribution
+resource "aws_cloudfront_distribution" "main" {
+  enabled             = true
+  is_ipv6_enabled     = true
+  default_root_object = "index.html"
+  aliases             = ["fumi-til.com"]
+  price_class         = "PriceClass_200"
+  comment             = "fumi-til blog distribution"
+
+  # オリジン設定（S3）
+  origin {
+    domain_name              = aws_s3_bucket.content.bucket_regional_domain_name
+    origin_id                = "S3-fumi-til-content"
+    origin_access_control_id = aws_cloudfront_origin_access_control.main.id
+  }
+
+  # デフォルトキャッシュ動作
+  default_cache_behavior {
+    allowed_methods        = ["GET", "HEAD"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = "S3-fumi-til-content"
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+
+    # キャッシュポリシー（CachingOptimized）
+    cache_policy_id = "658327ea-f89d-4fab-a63d-7e88639e58f6"
+  }
+
+  # SSL/TLS設定
+  viewer_certificate {
+    acm_certificate_arn      = var.acm_certificate_arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
+  }
+
+  # 地理的制限（なし）
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+
+  # アクセスログ設定
+  logging_config {
+    bucket          = aws_s3_bucket.logs.bucket_domain_name
+    prefix          = "cloudfront/"
+    include_cookies = false
+  }
+
+  # カスタムエラーレスポンス（SPAやHugo用）
+  custom_error_response {
+    error_code         = 403
+    response_code      = 404
+    response_page_path = "/404.html"
+  }
+
+  custom_error_response {
+    error_code         = 404
+    response_code      = 404
+    response_page_path = "/404.html"
+  }
+
+  tags = {
+    Name = "fumi-til-distribution"
+  }
+}
+
+# S3バケットポリシー
+resource "aws_s3_bucket_policy" "content" {
+  bucket = aws_s3_bucket.content.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowCloudFrontServicePrincipal"
+        Effect = "Allow"
+        Principal = {
+          Service = "cloudfront.amazonaws.com"
+        }
+        Action   = "s3:GetObject"
+        Resource = "${aws_s3_bucket.content.arn}/*"
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = aws_cloudfront_distribution.main.arn
+          }
+        }
+      }
+    ]
+  })
+}
