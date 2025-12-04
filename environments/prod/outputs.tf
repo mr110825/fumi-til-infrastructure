@@ -12,3 +12,8 @@ output "s3_content_bucket" {
   description = "コンテンツ用S3バケット名"
   value       = aws_s3_bucket.content.bucket
 }
+
+output "github_actions_role_arn" {
+  description = "GitHub Actions用IAMロールのARN"
+  value       = aws_iam_role.github_actions.arn
+}
