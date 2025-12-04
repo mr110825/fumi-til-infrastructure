@@ -119,6 +119,11 @@ resource "aws_cloudfront_distribution" "main" {
 
     # キャッシュポリシー（CachingOptimized）
     cache_policy_id = "658327ea-f89d-4fab-a63d-7e88639e58f6"
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.rewrite.arn
+    }
   }
 
   # SSL/TLS設定
@@ -182,4 +187,47 @@ resource "aws_s3_bucket_policy" "content" {
       }
     ]
   })
+}
+
+# Route53ホストゾーン
+data "aws_route53_zone" "main" {
+  name         = "fumi-til.com"
+  private_zone = false
+}
+
+# Aレコード（CloudFrontへのAlias）
+resource "aws_route53_record" "root" {
+  zone_id = data.aws_route53_zone.main.zone_id
+  name    = "fumi-til.com"
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.main.domain_name
+    zone_id                = aws_cloudfront_distribution.main.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
+# CloudFront Function（URL修正）
+resource "aws_cloudfront_function" "rewrite" {
+  name    = "fumi-til-url-rewrite"
+  runtime = "cloudfront-js-2.0"
+  publish = true
+  code    = <<-EOF
+    function handler(event) {
+      var request = event.request;
+      var uri = request.uri;
+      
+      // URIが/で終わる場合、index.htmlを付加
+      if (uri.endsWith('/')) {
+        request.uri += 'index.html';
+      }
+      // URIに拡張子がない場合、/index.htmlを付加
+      else if (!uri.includes('.')) {
+        request.uri += '/index.html';
+      }
+      
+      return request;
+    }
+  EOF
 }
