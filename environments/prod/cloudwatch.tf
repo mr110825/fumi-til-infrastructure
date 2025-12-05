@@ -83,3 +83,58 @@ output "cloudwatch_dashboard_url" {
   description = "CloudWatch Dashboard URL"
   value       = "https://ap-northeast-1.console.aws.amazon.com/cloudwatch/home?region=ap-northeast-1#dashboards:name=${aws_cloudwatch_dashboard.main.dashboard_name}"
 }
+
+# CloudWatch Alarms
+# エラー率が閾値を超えたらSNS通知
+
+# 5xxエラー率アラーム（サーバーエラー）
+resource "aws_cloudwatch_metric_alarm" "error_5xx" {
+  alarm_name          = "fumi-til-5xx-error-rate"
+  alarm_description   = "CloudFront 5xxエラー率が1%を超えた場合にアラート"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2              # 2回連続で閾値超過したらアラート
+  metric_name         = "5xxErrorRate"
+  namespace           = "AWS/CloudFront"
+  period              = 300            # 5分間隔
+  statistic           = "Average"
+  threshold           = 1              # 1%超過でアラート
+  treat_missing_data  = "notBreaching" # データなしは正常扱い
+
+  dimensions = {
+    DistributionId = aws_cloudfront_distribution.main.id
+    Region         = "Global"
+  }
+
+  alarm_actions = [aws_sns_topic.alerts.arn]
+  ok_actions    = [aws_sns_topic.alerts.arn]
+
+  tags = {
+    Name = "fumi-til-5xx-error-rate"
+  }
+}
+
+# 4xxエラー率アラーム（クライアントエラー）
+resource "aws_cloudwatch_metric_alarm" "error_4xx" {
+  alarm_name          = "fumi-til-4xx-error-rate"
+  alarm_description   = "CloudFront 4xxエラー率が5%を超えた場合にアラート"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "4xxErrorRate"
+  namespace           = "AWS/CloudFront"
+  period              = 300
+  statistic           = "Average"
+  threshold           = 5              # 5%超過でアラート（4xxは多めに許容）
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    DistributionId = aws_cloudfront_distribution.main.id
+    Region         = "Global"
+  }
+
+  alarm_actions = [aws_sns_topic.alerts.arn]
+  ok_actions    = [aws_sns_topic.alerts.arn]
+
+  tags = {
+    Name = "fumi-til-4xx-error-rate"
+  }
+}
