@@ -14,11 +14,11 @@ resource "aws_cloudwatch_dashboard" "main" {
         height = 6
         properties = {
           title  = "CloudFront リクエスト数"
-          region = "us-east-1"  # CloudFrontメトリクスはus-east-1
+          region = "us-east-1" # CloudFrontメトリクスはus-east-1
           metrics = [
             ["AWS/CloudFront", "Requests", "DistributionId", aws_cloudfront_distribution.main.id, "Region", "Global"]
           ]
-          period = 300  # 5分間隔
+          period = 300 # 5分間隔
           stat   = "Sum"
         }
       },
@@ -92,10 +92,10 @@ resource "aws_cloudwatch_metric_alarm" "error_5xx" {
   alarm_name          = "fumi-til-5xx-error-rate"
   alarm_description   = "CloudFront 5xxエラー率が1%を超えた場合にアラート"
   comparison_operator = "GreaterThanThreshold"
-  evaluation_periods  = 2              # 2回連続で閾値超過したらアラート
+  evaluation_periods  = 2 # 2回連続で閾値超過したらアラート
   metric_name         = "5xxErrorRate"
   namespace           = "AWS/CloudFront"
-  period              = 300            # 5分間隔
+  period              = 300 # 5分間隔
   statistic           = "Average"
   threshold           = 1              # 1%超過でアラート
   treat_missing_data  = "notBreaching" # データなしは正常扱い
@@ -123,7 +123,7 @@ resource "aws_cloudwatch_metric_alarm" "error_4xx" {
   namespace           = "AWS/CloudFront"
   period              = 300
   statistic           = "Average"
-  threshold           = 5              # 5%超過でアラート（4xxは多めに許容）
+  threshold           = 5 # 5%超過でアラート（4xxは多めに許容）
   treat_missing_data  = "notBreaching"
 
   dimensions = {
