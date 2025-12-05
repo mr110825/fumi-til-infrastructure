@@ -15,7 +15,7 @@ output "s3_content_bucket" {
 
 output "github_actions_role_arn" {
   description = "GitHub Actions用IAMロールのARN"
-  value       = aws_iam_role.github_actions.arn
+  value       = module.iam_github_actions.role_arn
 }
 
 output "sns_topic_arn" {

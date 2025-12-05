@@ -45,6 +45,16 @@ module "route53" {
   cloudfront_hosted_zone_id = module.cloudfront.hosted_zone_id
 }
 
+module "iam_github_actions" {
+  source = "../../modules/iam-github-actions"
+
+  name_prefix                 = "fumi-til"
+  github_repo                 = "mr110825/blowfish_my_blog"
+  github_branch               = "main"
+  s3_bucket_arn               = module.s3_content.bucket_arn
+  cloudfront_distribution_arn = module.cloudfront.distribution_arn
+}
+
 # State移行：cloudfront
 moved {
   from = aws_cloudfront_origin_access_control.main
@@ -70,4 +80,20 @@ moved {
 moved {
   from = aws_route53_record.root
   to   = module.route53.aws_route53_record.root
+}
+
+# State移行：iam-github-actions
+moved {
+  from = aws_iam_openid_connect_provider.github
+  to   = module.iam_github_actions.aws_iam_openid_connect_provider.github
+}
+
+moved {
+  from = aws_iam_role.github_actions
+  to   = module.iam_github_actions.aws_iam_role.github_actions
+}
+
+moved {
+  from = aws_iam_role_policy.github_actions
+  to   = module.iam_github_actions.aws_iam_role_policy.github_actions
 }
