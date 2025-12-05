@@ -16,7 +16,7 @@ resource "aws_cloudwatch_dashboard" "main" {
           title  = "CloudFront リクエスト数"
           region = "us-east-1" # CloudFrontメトリクスはus-east-1
           metrics = [
-            ["AWS/CloudFront", "Requests", "DistributionId", aws_cloudfront_distribution.main.id, "Region", "Global"]
+            ["AWS/CloudFront", "Requests", "DistributionId", module.cloudfront.distribution_id, "Region", "Global"]
           ]
           period = 300 # 5分間隔
           stat   = "Sum"
@@ -33,7 +33,7 @@ resource "aws_cloudwatch_dashboard" "main" {
           title  = "CloudFront エラー率 (%)"
           region = "us-east-1"
           metrics = [
-            ["AWS/CloudFront", "4xxErrorRate", "DistributionId", aws_cloudfront_distribution.main.id, "Region", "Global"],
+            ["AWS/CloudFront", "4xxErrorRate", "DistributionId", module.cloudfront.distribution_id, "Region", "Global"],
             [".", "5xxErrorRate", ".", ".", ".", "."]
           ]
           period = 300
@@ -51,7 +51,7 @@ resource "aws_cloudwatch_dashboard" "main" {
           title  = "CloudFront データ転送量 (Bytes)"
           region = "us-east-1"
           metrics = [
-            ["AWS/CloudFront", "BytesDownloaded", "DistributionId", aws_cloudfront_distribution.main.id, "Region", "Global"],
+            ["AWS/CloudFront", "BytesDownloaded", "DistributionId", module.cloudfront.distribution_id, "Region", "Global"],
             [".", "BytesUploaded", ".", ".", ".", "."]
           ]
           period = 300
@@ -69,7 +69,7 @@ resource "aws_cloudwatch_dashboard" "main" {
           title  = "CloudFront キャッシュヒット率 (%)"
           region = "us-east-1"
           metrics = [
-            ["AWS/CloudFront", "CacheHitRate", "DistributionId", aws_cloudfront_distribution.main.id, "Region", "Global"]
+            ["AWS/CloudFront", "CacheHitRate", "DistributionId", module.cloudfront.distribution_id, "Region", "Global"]
           ]
           period = 300
           stat   = "Average"
@@ -101,7 +101,7 @@ resource "aws_cloudwatch_metric_alarm" "error_5xx" {
   treat_missing_data  = "notBreaching" # データなしは正常扱い
 
   dimensions = {
-    DistributionId = aws_cloudfront_distribution.main.id
+    DistributionId = module.cloudfront.distribution_id
     Region         = "Global"
   }
 
@@ -127,7 +127,7 @@ resource "aws_cloudwatch_metric_alarm" "error_4xx" {
   treat_missing_data  = "notBreaching"
 
   dimensions = {
-    DistributionId = aws_cloudfront_distribution.main.id
+    DistributionId = module.cloudfront.distribution_id
     Region         = "Global"
   }
 

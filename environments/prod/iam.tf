@@ -74,7 +74,7 @@ resource "aws_iam_role_policy" "github_actions" {
           "cloudfront:CreateInvalidation",
           "cloudfront:GetInvalidation"
         ]
-        Resource = aws_cloudfront_distribution.main.arn
+        Resource = module.cloudfront.distribution_arn
       }
     ]
   })
