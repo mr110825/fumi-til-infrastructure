@@ -37,23 +37,12 @@ module "cloudfront" {
   acm_certificate_arn                    = module.acm.certificate_arn
 }
 
-# Route53ホストゾーン
-data "aws_route53_zone" "main" {
-  name         = "fumi-til.com"
-  private_zone = false
-}
+module "route53" {
+  source = "../../modules/route53"
 
-# Aレコード（CloudFrontへのAlias）
-resource "aws_route53_record" "root" {
-  zone_id = data.aws_route53_zone.main.zone_id
-  name    = "fumi-til.com"
-  type    = "A"
-
-  alias {
-    name                   = module.cloudfront.domain_name
-    zone_id                = module.cloudfront.hosted_zone_id
-    evaluate_target_health = false
-  }
+  domain_name               = "fumi-til.com"
+  cloudfront_domain_name    = module.cloudfront.domain_name
+  cloudfront_hosted_zone_id = module.cloudfront.hosted_zone_id
 }
 
 # State移行：cloudfront
@@ -75,4 +64,10 @@ moved {
 moved {
   from = aws_s3_bucket_policy.content
   to   = module.cloudfront.aws_s3_bucket_policy.content
+}
+
+# State移行：route53
+moved {
+  from = aws_route53_record.root
+  to   = module.route53.aws_route53_record.root
 }
