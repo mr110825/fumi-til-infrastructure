@@ -10,7 +10,7 @@ output "cloudfront_distribution_id" {
 
 output "s3_content_bucket" {
   description = "コンテンツ用S3バケット名"
-  value       = aws_s3_bucket.content.bucket
+  value       = module.s3_content.bucket_id
 }
 
 output "github_actions_role_arn" {

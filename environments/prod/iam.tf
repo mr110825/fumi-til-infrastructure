@@ -63,8 +63,8 @@ resource "aws_iam_role_policy" "github_actions" {
           "s3:ListBucket"
         ]
         Resource = [
-          aws_s3_bucket.content.arn,
-          "${aws_s3_bucket.content.arn}/*"
+          module.s3_content.bucket_arn,
+          "${module.s3_content.bucket_arn}/*"
         ]
       },
       {

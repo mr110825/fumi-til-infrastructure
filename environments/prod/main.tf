@@ -1,88 +1,56 @@
-# コンテンツ用S3バケット
-resource "aws_s3_bucket" "content" {
-  bucket = "fumi-til-content"
-
-  tags = {
-    Name = "fumi-til-content"
-  }
+# モジュール
+module "s3_content" {
+  source      = "../../modules/s3-content"
+  bucket_name = "fumi-til-content"
 }
 
-# パブリックアクセスを完全にブロック
-resource "aws_s3_bucket_public_access_block" "content" {
-  bucket = aws_s3_bucket.content.id
-
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
+module "s3_logs" {
+  source          = "../../modules/s3-logs"
+  bucket_name     = "fumi-til-logs"
+  expiration_days = 90
 }
 
-# サーバーサイド暗号化（SSE-S3）
-resource "aws_s3_bucket_server_side_encryption_configuration" "content" {
-  bucket = aws_s3_bucket.content.id
+# State移行：s3-content（参考用）
+# moved {
+#   from = aws_s3_bucket.content
+#   to   = module.s3_content.aws_s3_bucket.this
+# }
 
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
-  }
-}
+# moved {
+#   from = aws_s3_bucket_public_access_block.content
+#   to   = module.s3_content.aws_s3_bucket_public_access_block.this
+# }
 
-# ログ用S3バケット（CloudFrontアクセスログ保存用）
-resource "aws_s3_bucket" "logs" {
-  bucket = "fumi-til-logs"
+# moved {
+#   from = aws_s3_bucket_server_side_encryption_configuration.content
+#   to   = module.s3_content.aws_s3_bucket_server_side_encryption_configuration.this
+# }
 
-  tags = {
-    Name = "fumi-til-logs"
-  }
-}
+# State移行：s3-logs
+# moved {
+#   from = aws_s3_bucket.logs
+#   to   = module.s3_logs.aws_s3_bucket.this
+# }
 
-# パブリックアクセスを完全にブロック
-resource "aws_s3_bucket_public_access_block" "logs" {
-  bucket = aws_s3_bucket.logs.id
+# moved {
+#   from = aws_s3_bucket_public_access_block.logs
+#   to   = module.s3_logs.aws_s3_bucket_public_access_block.this
+# }
 
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
+# moved {
+#   from = aws_s3_bucket_server_side_encryption_configuration.logs
+#   to   = module.s3_logs.aws_s3_bucket_server_side_encryption_configuration.this
+# }
 
-# サーバーサイド暗号化（SSE-S3）
-resource "aws_s3_bucket_server_side_encryption_configuration" "logs" {
-  bucket = aws_s3_bucket.logs.id
+# moved {
+#   from = aws_s3_bucket_ownership_controls.logs
+#   to   = module.s3_logs.aws_s3_bucket_ownership_controls.this
+# }
 
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
-  }
-}
-
-# CloudFrontがログを書き込むためのオーナーシップ設定
-resource "aws_s3_bucket_ownership_controls" "logs" {
-  bucket = aws_s3_bucket.logs.id
-
-  rule {
-    object_ownership = "BucketOwnerPreferred"
-  }
-}
-
-# ライフサイクルルール：90日でログを自動削除
-resource "aws_s3_bucket_lifecycle_configuration" "logs" {
-  bucket = aws_s3_bucket.logs.id
-
-  rule {
-    id     = "delete-old-logs"
-    status = "Enabled"
-
-    # 全オブジェクトに適用（空のfilterはバケット内全体を対象とする）
-    filter {}
-
-    expiration {
-      days = 90
-    }
-  }
-}
+# moved {
+#   from = aws_s3_bucket_lifecycle_configuration.logs
+#   to   = module.s3_logs.aws_s3_bucket_lifecycle_configuration.this
+# }
 
 # CloudFront OAC（Origin Access Control）
 resource "aws_cloudfront_origin_access_control" "main" {
@@ -93,7 +61,7 @@ resource "aws_cloudfront_origin_access_control" "main" {
   signing_protocol                  = "sigv4"
 }
 
-# CloudFront Distribution
+# CloudFront ディストリビューション
 resource "aws_cloudfront_distribution" "main" {
   enabled             = true
   is_ipv6_enabled     = true
@@ -104,7 +72,7 @@ resource "aws_cloudfront_distribution" "main" {
 
   # オリジン設定（S3）
   origin {
-    domain_name              = aws_s3_bucket.content.bucket_regional_domain_name
+    domain_name              = module.s3_content.bucket_regional_domain_name
     origin_id                = "S3-fumi-til-content"
     origin_access_control_id = aws_cloudfront_origin_access_control.main.id
   }
@@ -117,7 +85,6 @@ resource "aws_cloudfront_distribution" "main" {
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
 
-    # キャッシュポリシー（CachingOptimized）
     cache_policy_id = "658327ea-f89d-4fab-a63d-7e88639e58f6"
 
     function_association {
@@ -142,7 +109,7 @@ resource "aws_cloudfront_distribution" "main" {
 
   # アクセスログ設定
   logging_config {
-    bucket          = aws_s3_bucket.logs.bucket_domain_name
+    bucket          = module.s3_logs.bucket_domain_name
     prefix          = "cloudfront/"
     include_cookies = false
   }
@@ -167,7 +134,7 @@ resource "aws_cloudfront_distribution" "main" {
 
 # S3バケットポリシー
 resource "aws_s3_bucket_policy" "content" {
-  bucket = aws_s3_bucket.content.id
+  bucket = module.s3_content.bucket_id
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -178,7 +145,7 @@ resource "aws_s3_bucket_policy" "content" {
           Service = "cloudfront.amazonaws.com"
         }
         Action   = "s3:GetObject"
-        Resource = "${aws_s3_bucket.content.arn}/*"
+        Resource = "${module.s3_content.bucket_arn}/*"
         Condition = {
           StringEquals = {
             "AWS:SourceArn" = aws_cloudfront_distribution.main.arn
@@ -208,7 +175,7 @@ resource "aws_route53_record" "root" {
   }
 }
 
-# CloudFront Function（URL修正）
+# CloudFront Function（URLリライト）
 resource "aws_cloudfront_function" "rewrite" {
   name    = "fumi-til-url-rewrite"
   runtime = "cloudfront-js-2.0"
@@ -218,11 +185,9 @@ resource "aws_cloudfront_function" "rewrite" {
       var request = event.request;
       var uri = request.uri;
       
-      // URIが/で終わる場合、index.htmlを付加
       if (uri.endsWith('/')) {
         request.uri += 'index.html';
       }
-      // URIに拡張子がない場合、/index.htmlを付加
       else if (!uri.includes('.')) {
         request.uri += '/index.html';
       }
