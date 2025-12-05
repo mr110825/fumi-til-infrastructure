@@ -10,48 +10,6 @@ module "s3_logs" {
   expiration_days = 90
 }
 
-# State移行：s3-content（参考用）
-# moved {
-#   from = aws_s3_bucket.content
-#   to   = module.s3_content.aws_s3_bucket.this
-# }
-
-# moved {
-#   from = aws_s3_bucket_public_access_block.content
-#   to   = module.s3_content.aws_s3_bucket_public_access_block.this
-# }
-
-# moved {
-#   from = aws_s3_bucket_server_side_encryption_configuration.content
-#   to   = module.s3_content.aws_s3_bucket_server_side_encryption_configuration.this
-# }
-
-# State移行：s3-logs
-# moved {
-#   from = aws_s3_bucket.logs
-#   to   = module.s3_logs.aws_s3_bucket.this
-# }
-
-# moved {
-#   from = aws_s3_bucket_public_access_block.logs
-#   to   = module.s3_logs.aws_s3_bucket_public_access_block.this
-# }
-
-# moved {
-#   from = aws_s3_bucket_server_side_encryption_configuration.logs
-#   to   = module.s3_logs.aws_s3_bucket_server_side_encryption_configuration.this
-# }
-
-# moved {
-#   from = aws_s3_bucket_ownership_controls.logs
-#   to   = module.s3_logs.aws_s3_bucket_ownership_controls.this
-# }
-
-# moved {
-#   from = aws_s3_bucket_lifecycle_configuration.logs
-#   to   = module.s3_logs.aws_s3_bucket_lifecycle_configuration.this
-# }
-
 # CloudFront OAC（Origin Access Control）
 resource "aws_cloudfront_origin_access_control" "main" {
   name                              = "fumi-til-oac"
@@ -95,7 +53,7 @@ resource "aws_cloudfront_distribution" "main" {
 
   # SSL/TLS設定
   viewer_certificate {
-    acm_certificate_arn      = var.acm_certificate_arn
+    acm_certificate_arn      = module.acm.certificate_arn
     ssl_support_method       = "sni-only"
     minimum_protocol_version = "TLSv1.2_2021"
   }
@@ -196,3 +154,71 @@ resource "aws_cloudfront_function" "rewrite" {
     }
   EOF
 }
+
+module "sns" {
+  source     = "../../modules/sns"
+  topic_name = "fumi-til-alerts"
+  email      = var.alert_email
+}
+
+module "acm" {
+  source      = "../../modules/acm"
+  domain_name = "fumi-til.com"
+
+  providers = {
+    aws = aws.us_east_1
+  }
+}
+
+# State移行：s3-content（参考用）
+# moved {
+#   from = aws_s3_bucket.content
+#   to   = module.s3_content.aws_s3_bucket.this
+# }
+
+# moved {
+#   from = aws_s3_bucket_public_access_block.content
+#   to   = module.s3_content.aws_s3_bucket_public_access_block.this
+# }
+
+# moved {
+#   from = aws_s3_bucket_server_side_encryption_configuration.content
+#   to   = module.s3_content.aws_s3_bucket_server_side_encryption_configuration.this
+# }
+
+# State移行：s3-logs
+# moved {
+#   from = aws_s3_bucket.logs
+#   to   = module.s3_logs.aws_s3_bucket.this
+# }
+
+# moved {
+#   from = aws_s3_bucket_public_access_block.logs
+#   to   = module.s3_logs.aws_s3_bucket_public_access_block.this
+# }
+
+# moved {
+#   from = aws_s3_bucket_server_side_encryption_configuration.logs
+#   to   = module.s3_logs.aws_s3_bucket_server_side_encryption_configuration.this
+# }
+
+# moved {
+#   from = aws_s3_bucket_ownership_controls.logs
+#   to   = module.s3_logs.aws_s3_bucket_ownership_controls.this
+# }
+
+# moved {
+#   from = aws_s3_bucket_lifecycle_configuration.logs
+#   to   = module.s3_logs.aws_s3_bucket_lifecycle_configuration.this
+# }
+
+# State移行：sns
+# moved {
+#   from = aws_sns_topic.alerts
+#   to   = module.sns.aws_sns_topic.this
+# }
+
+# moved {
+#   from = aws_sns_topic_subscription.email
+#   to   = module.sns.aws_sns_topic_subscription.email
+# }

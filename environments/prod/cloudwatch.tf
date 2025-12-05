@@ -105,8 +105,8 @@ resource "aws_cloudwatch_metric_alarm" "error_5xx" {
     Region         = "Global"
   }
 
-  alarm_actions = [aws_sns_topic.alerts.arn]
-  ok_actions    = [aws_sns_topic.alerts.arn]
+  alarm_actions = [module.sns.topic_arn]
+  ok_actions    = [module.sns.topic_arn]
 
   tags = {
     Name = "fumi-til-5xx-error-rate"
@@ -131,8 +131,8 @@ resource "aws_cloudwatch_metric_alarm" "error_4xx" {
     Region         = "Global"
   }
 
-  alarm_actions = [aws_sns_topic.alerts.arn]
-  ok_actions    = [aws_sns_topic.alerts.arn]
+  alarm_actions = [module.sns.topic_arn]
+  ok_actions    = [module.sns.topic_arn]
 
   tags = {
     Name = "fumi-til-4xx-error-rate"
