@@ -55,6 +55,14 @@ module "iam_github_actions" {
   cloudfront_distribution_arn = module.cloudfront.distribution_arn
 }
 
+module "cloudwatch" {
+  source = "../../modules/cloudwatch"
+
+  name_prefix                = "fumi-til"
+  cloudfront_distribution_id = module.cloudfront.distribution_id
+  sns_topic_arn              = module.sns.topic_arn
+}
+
 # State移行：cloudfront
 moved {
   from = aws_cloudfront_origin_access_control.main
@@ -96,4 +104,20 @@ moved {
 moved {
   from = aws_iam_role_policy.github_actions
   to   = module.iam_github_actions.aws_iam_role_policy.github_actions
+}
+
+# State移行：cloudwatch
+moved {
+  from = aws_cloudwatch_dashboard.main
+  to   = module.cloudwatch.aws_cloudwatch_dashboard.this
+}
+
+moved {
+  from = aws_cloudwatch_metric_alarm.error_5xx
+  to   = module.cloudwatch.aws_cloudwatch_metric_alarm.error_5xx
+}
+
+moved {
+  from = aws_cloudwatch_metric_alarm.error_4xx
+  to   = module.cloudwatch.aws_cloudwatch_metric_alarm.error_4xx
 }

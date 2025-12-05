@@ -22,3 +22,8 @@ output "sns_topic_arn" {
   description = "SNSトピックARN"
   value       = module.sns.topic_arn
 }
+
+output "cloudwatch_dashboard_url" {
+  description = "CloudWatch Dashboard URL"
+  value       = module.cloudwatch.dashboard_url
+}
