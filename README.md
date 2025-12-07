@@ -17,29 +17,7 @@
 
 ## アーキテクチャ
 
-```mermaid
-flowchart LR
-    subgraph User
-        Browser[ブラウザ]
-    end
-
-    subgraph AWS
-        Route53[Route53]
-        CloudFront[CloudFront<br/>+ ACM証明書]
-        S3[S3<br/>コンテンツ]
-        
-        subgraph Monitoring
-            CW[CloudWatch]
-            SNS[SNS → メール]
-        end
-    end
-
-    Browser --> Route53
-    Route53 --> CloudFront
-    CloudFront -->|OAC| S3
-    CloudFront -.->|メトリクス| CW
-    CW -.->|アラート| SNS
-```
+![アーキテクチャ図](docs/architecture.svg)
 
 | 項目 | 内容 |
 |------|------|
