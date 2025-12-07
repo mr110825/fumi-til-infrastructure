@@ -18,3 +18,8 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+variable "google_site_verification" {
+  description = "Google Search Console検証用のTXTレコード値"
+  type        = string
+  default     = ""
+}

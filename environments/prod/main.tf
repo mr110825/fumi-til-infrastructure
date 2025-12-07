@@ -43,6 +43,7 @@ module "route53" {
   domain_name               = "fumi-til.com"
   cloudfront_domain_name    = module.cloudfront.domain_name
   cloudfront_hosted_zone_id = module.cloudfront.hosted_zone_id
+  google_site_verification  = "google-site-verification=jNjYDBoKq0s4KNnsX3BvUnYPs5Jn7tCmM5fbyEC3DB8"
 }
 
 module "iam_github_actions" {
