@@ -17,7 +17,7 @@
 
 ## アーキテクチャ
 
-![アーキテクチャ図](docs/architecture.svg)
+![アーキテクチャ図](docs/S3+CloudFront構成図.drawio.svg)
 
 | 項目 | 内容 |
 |------|------|
